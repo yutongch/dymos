@@ -31,7 +31,7 @@ class Radau(PseudospectralBase):
     """
     def __init__(self, **kwargs):
         super(Radau, self).__init__(**kwargs)
-        self._rhs_source = 'rhs_all'
+        self._rhs_source = 'SchurGroup.SchurCoupling.rhs_all'
 
     def init_grid(self):
         """
@@ -66,7 +66,7 @@ class Radau(PseudospectralBase):
                                        ('t_phase', options['time_phase_targets'], True)]:
             if targets:
                 src_idxs = self.grid_data.subset_node_indices['all'] if dynamic else None
-                phase.connect(name, [f'rhs_all.{t}' for t in targets], src_indices=src_idxs,
+                phase.connect(name, [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in targets], src_indices=src_idxs,
                               flat_src_indices=True if dynamic else None)
 
         for name, targets in [('t_initial', options['t_initial_targets']),
@@ -103,15 +103,15 @@ class Radau(PseudospectralBase):
 
         for name, options in phase.control_options.items():
             if options['targets']:
-                phase.connect(f'control_values:{name}', [f'rhs_all.{t}' for t in options['targets']])
+                phase.connect(f'control_values:{name}', [f'{t}' for t in options['targets']])
 
             if options['rate_targets']:
                 phase.connect(f'control_rates:{name}_rate',
-                              [f'rhs_all.{t}' for t in options['rate_targets']])
+                              [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in options['rate_targets']])
 
             if options['rate2_targets']:
                 phase.connect(f'control_rates:{name}_rate2',
-                              [f'rhs_all.{t}' for t in options['rate2_targets']])
+                              [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in options['rate2_targets']])
 
     def configure_polynomial_controls(self, phase):
         """
@@ -130,19 +130,19 @@ class Radau(PseudospectralBase):
             targets = get_targets(ode=ode_inputs, name=name, user_targets=options['targets'])
             if targets:
                 phase.connect(f'polynomial_control_values:{name}',
-                              [f'rhs_all.{t}' for t in targets])
+                              [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in targets])
 
-            targets = get_targets(ode=phase.rhs_all, name=f'{name}_rate',
+            targets = get_targets(ode=phase.schur_coupling.rhs_all, name=f'{name}_rate',
                                   user_targets=options['rate_targets'])
             if targets:
                 phase.connect(f'polynomial_control_rates:{name}_rate',
-                              [f'rhs_all.{t}' for t in targets])
+                              [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in targets])
 
-            targets = get_targets(ode=phase.rhs_all, name=f'{name}_rate2',
+            targets = get_targets(ode=phase.schur_coupling.rhs_all, name=f'{name}_rate2',
                                   user_targets=options['rate2_targets'])
             if targets:
                 phase.connect(f'polynomial_control_rates:{name}_rate2',
-                              [f'rhs_all.{t}' for t in targets])
+                              [f'SchurGroup.SchurCoupling.rhs_all.{t}' for t in targets])
 
     def setup_ode(self, phase):
         """
@@ -159,9 +159,9 @@ class Radau(PseudospectralBase):
         grid_data = self.grid_data
 
         kwargs = phase.options['ode_init_kwargs']
-        phase.add_subsystem('rhs_all',
+        phase.schur_coupling.add_subsystem('rhs_all',
                             subsys=ODEClass(num_nodes=grid_data.subset_num_nodes['all'],
-                                            **kwargs))
+                                            **kwargs),promotes=['*'])
 
     def configure_ode(self, phase):
         """
@@ -176,14 +176,14 @@ class Radau(PseudospectralBase):
 
         grid_data = self.grid_data
         map_input_indices_to_disc = grid_data.input_maps['state_input_to_disc']
-        ode_inputs = get_promoted_vars(phase.rhs_all, 'input')
+        ode_inputs = get_promoted_vars(phase.schur_coupling.rhs_all, 'input')
 
         for name, options in phase.state_options.items():
 
             targets = get_targets(ode_inputs, name=name, user_targets=options['targets'])
             if targets:
                 phase.connect(f'states:{name}',
-                              [f'rhs_all.{tgt}' for tgt in targets],
+                              [f'SchurGroup.SchurCoupling.rhs_all.{tgt}' for tgt in targets],
                               src_indices=om.slicer[map_input_indices_to_disc, ...])
 
     def setup_defects(self, phase):
@@ -317,7 +317,7 @@ class Radau(PseudospectralBase):
             node_idxs = np.zeros(gd.subset_num_nodes[nodes], dtype=int)
         else:
             # Failed to find variable, assume it is in the ODE
-            rate_path = f'rhs_all.{var}'
+            rate_path = f'{var}'
             node_idxs = gd.subset_node_indices[nodes]
 
         src_idxs = om.slicer[node_idxs, ...]
@@ -427,7 +427,7 @@ class Radau(PseudospectralBase):
             src_shape = phase.parameter_options[var]['shape']
         else:
             # Failed to find variable, assume it is in the ODE
-            path = f'rhs_all.{var}'
+            path = f'SchurGroup.SchurCoupling.rhs_all.{var}'
             meta = get_source_metadata(ode_outputs, src=var)
             src_shape = meta['shape']
             src_units = meta['units']
@@ -474,7 +474,7 @@ class Radau(PseudospectralBase):
                     if options['shape'] == (1,):
                         src_idxs = src_idxs.ravel()
 
-                connection_info.append((f'rhs_all.{tgt}', (src_idxs,)))
+                connection_info.append((f'SchurGroup.SchurCoupling.rhs_all.{tgt}', (src_idxs,)))
 
         return connection_info
 

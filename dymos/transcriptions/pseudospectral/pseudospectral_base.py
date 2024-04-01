@@ -104,7 +104,7 @@ class PseudospectralBase(TranscriptionBase):
 
         num_connected = len([s for (s, opts) in phase.state_options.items() if opts['input_initial']])
         prom_inputs = ['initial_states:*'] if num_connected > 0 else None
-        phase.add_subsystem('indep_states', indep, promotes_inputs=prom_inputs,
+        phase.schur_coupling.add_subsystem('indep_states', indep, promotes_inputs=prom_inputs,
                             promotes_outputs=['*'])
 
     def configure_controls(self, phase):
@@ -137,7 +137,7 @@ class PseudospectralBase(TranscriptionBase):
         super().configure_states(phase)
         grid_data = self.grid_data
         num_state_input_nodes = grid_data.subset_num_nodes['state_input']
-        indep = phase.indep_states
+        indep = phase.SchurGroup.SchurCoupling.indep_states
 
         # state_idx_map holds the node indices provided by the solver (solver) and those
         # that are independent variables (indep)
@@ -257,7 +257,7 @@ class PseudospectralBase(TranscriptionBase):
             The phase object to which this transcription instance applies.
         """
         grid_data = self.grid_data
-        phase.add_subsystem('state_interp',
+        phase.schur_coupling.add_subsystem('state_interp',
                             subsys=StateInterpComp(grid_data=grid_data,
                                                    state_options=phase.state_options,
                                                    time_units=phase.time_options['units'],
@@ -275,7 +275,7 @@ class PseudospectralBase(TranscriptionBase):
         grid_data = self.grid_data
         map_input_indices_to_disc = grid_data.input_maps['state_input_to_disc']
 
-        phase.state_interp.configure_io()
+        phase.SchurGroup.SchurCoupling.state_interp.configure_io()
 
         phase.connect('dt_dstau', 'state_interp.dt_dstau',
                       src_indices=grid_data.subset_node_indices['col'], flat_src_indices=True)
@@ -294,7 +294,7 @@ class PseudospectralBase(TranscriptionBase):
         phase : dymos.Phase
             The phase object to which this transcription instance applies.
         """
-        phase.add_subsystem('collocation_constraint',
+        phase.schur_group.add_subsystem('collocation_constraint',
                             CollocationComp(grid_data=self.grid_data,
                                             state_options=phase.state_options,
                                             time_units=phase.time_options['units']))
@@ -390,7 +390,7 @@ class PseudospectralBase(TranscriptionBase):
         phase.connect('dt_dstau', ('collocation_constraint.dt_dstau'),
                       src_indices=grid_data.subset_node_indices['col'], flat_src_indices=True)
 
-        phase.collocation_constraint.configure_io()
+        phase.SchurGroup.collocation_constraint.configure_io()
 
         any_state_cnty, any_control_cnty, any_control_rate_cnty = self._requires_continuity_constraints(phase)
 

@@ -1989,6 +1989,8 @@ class Phase(om.Group):
         if self.parameter_options:
             transcription.setup_parameters(self)
 
+        self.schur_group = self.add_subsystem('SchurGroup', om.Group(), promotes=['*'])
+        self.schur_coupling = self.schur_group.add_subsystem('SchurCoupling', om.Group(), promotes=['*'])
         transcription.setup_states(self)
         self._check_ode()
         transcription.setup_ode(self)
@@ -1999,6 +2001,8 @@ class Phase(om.Group):
 
         transcription.setup_defects(self)
         transcription.setup_solvers(self)
+
+        
 
     def configure(self):
         """
