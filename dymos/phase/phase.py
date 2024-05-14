@@ -1991,6 +1991,17 @@ class Phase(om.Group):
 
         self.schur_group = self.add_subsystem('SchurGroup', om.Group(), promotes=['*'])
         self.schur_coupling = self.schur_group.add_subsystem('SchurCoupling', om.Group(), promotes=['*'])
+        # self.schur_coupling_stov = self.schur_coupling.add_subsystem('SchurCouplingStoV', om.Group(), promotes=['*'])
+        # self.schur_coupling_vtos = self.schur_coupling.add_subsystem('SchurCouplingVtoS', om.Group(), promotes=['*'])
+        self.schur_group.nonlinear_solver = om.NonlinearSchurSolver( atol=1e-3, rtol=1e-8, solve_subsystems=True, maxiter=50, max_sub_solves=60, err_on_non_converge=True, mode_nonlinear="fwd", groupNames=["SchurCoupling", "collocation_constraint"], ) 
+        self.schur_group.linear_solver = om.LinearSchur( mode_linear="fwd", groupNames=["SchurCoupling", "collocation_constraint"], ) 
+        self.schur_group.set_solver_print(level=2) 
+        self.schur_group.linear_solver.options["iprint"] = 2
+
+        
+        # self.schur_coupling.nonlinear_solver = om.NewtonSolver(atol=1e-3, rtol=1e-8, solve_subsystems=True, maxiter=10)
+        # self.schur_coupling.linear_solver = om.DirectSolver()
+        
         transcription.setup_states(self)
         self._check_ode()
         transcription.setup_ode(self)

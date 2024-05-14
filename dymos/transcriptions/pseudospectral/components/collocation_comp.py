@@ -177,6 +177,7 @@ class CollocationComp(om.ImplicitComponent):
                 name=var_names['defect'],
                 shape=(num_col_nodes,) + shape,
                 desc=f'Interior defects of state {state_name}',
+                val=0.0,
                 units=units)
 
             if 'defect_ref' in options and options['defect_ref'] is not None:

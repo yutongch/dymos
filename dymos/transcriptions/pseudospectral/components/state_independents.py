@@ -87,6 +87,12 @@ class StateIndependentsComp(om.ImplicitComponent):
                             shape=(num_state_input_nodes,) + shape,
                             val=default_val,
                             units=units)
+            # for i in range(num_state_input_nodes):
+            #     self.add_output(name=f'states:{state_name[i]}',
+            #                 shape=(1,) + shape,
+            #                 val=default_val,
+            #                 units=units)
+
 
             # Input for continuity, which can come from an external source.
             if options['input_initial']:
@@ -98,8 +104,16 @@ class StateIndependentsComp(om.ImplicitComponent):
                 self.add_input(
                     name=var_names['defect'],
                     shape=(num_col_nodes, ) + shape,
+                    val=1.0,
                     desc=f'Constraint value for interior defects of state {state_name}',
                     units=units)
+                # for i in range(num_col_nodes):
+                #     self.add_input(
+                #     name=var_names['defect[i]'],
+                #     shape=(1, ) + shape,
+                #     desc=f'Constraint value for interior defects of state {state_name[i]}',
+                #     units=units)
+
 
         # Setup partials
         for state_name, options in state_options.items():
@@ -147,6 +161,9 @@ class StateIndependentsComp(om.ImplicitComponent):
                     row_col = np.arange(np.prod(shape))
                     self.declare_partials(of=state_var_name, wrt=wrt, rows=row_col, cols=row_col,
                                           val=1.0)
+                    
+        # self.nonlinear_solver = om.NewtonSolver(atol=1e-3, rtol=1e-8, solve_subsystems=True, maxiter=10)
+        # self.linear_solver = om.DirectSolver()
 
     def apply_nonlinear(self, inputs, outputs, residuals):
         """
@@ -192,23 +209,23 @@ class StateIndependentsComp(om.ImplicitComponent):
                     inputs[ic_state_name][0, ...] - \
                     outputs[state_var_name][0, ...]
 
-    def solve_nonlinear(self, inputs, outputs):
-        """
-        Compute outputs given inputs.
+    # def solve_nonlinear(self, inputs, outputs):
+    #     """
+    #     Compute outputs given inputs.
 
-        The model is assumed to be in an unscaled state.
+    #     The model is assumed to be in an unscaled state.
 
-        Parameters
-        ----------
-        inputs : Vector
-            Unscaled, dimensional input variables read via inputs[key].
-        outputs : Vector
-            Unscaled, dimensional output variables read via outputs[key].
-        """
-        state_options = self.options['state_options']
+    #     Parameters
+    #     ----------
+    #     inputs : Vector
+    #         Unscaled, dimensional input variables read via inputs[key].
+    #     outputs : Vector
+    #         Unscaled, dimensional output variables read via outputs[key].
+    #     """
+    #     state_options = self.options['state_options']
 
-        for state_name, options in state_options.items():
-            if options['input_initial']:
-                output_name = f'states:{state_name}'
-                input_name = f'initial_states:{state_name}'
-                outputs[output_name][0, ...] = inputs[input_name]
+    #     for state_name, options in state_options.items():
+    #         if options['input_initial']:
+    #             output_name = f'states:{state_name}'
+    #             input_name = f'initial_states:{state_name}'
+    #             outputs[output_name][0, ...] = inputs[input_name]

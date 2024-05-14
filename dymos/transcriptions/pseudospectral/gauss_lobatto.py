@@ -32,7 +32,7 @@ class GaussLobatto(PseudospectralBase):
     """
     def __init__(self, **kwargs):
         super(GaussLobatto, self).__init__(**kwargs)
-        self._rhs_source = 'rhs_disc'
+        self._rhs_source = 'SchurGroup.SchurCoupling.rhs_disc'
 
     def init_grid(self):
         """
@@ -68,7 +68,7 @@ class GaussLobatto(PseudospectralBase):
         """
         super(GaussLobatto, self).configure_time(phase)
         options = phase.time_options
-        ode_inputs = get_promoted_vars(self._get_ode(phase), 'input')
+        ode_inputs = get_promoted_vars(phase.schur_coupling.rhs_disc, 'input')
 
         # The tuples here are (name, user_specified_targets, dynamic)
         for name, usr_tgts in [('t', options['targets']),
@@ -79,10 +79,10 @@ class GaussLobatto(PseudospectralBase):
                 disc_src_idxs = self.grid_data.subset_node_indices['state_disc']
                 col_src_idxs = self.grid_data.subset_node_indices['col']
                 phase.connect(name,
-                              [f'rhs_col.{t}' for t in targets],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in targets],
                               src_indices=col_src_idxs, flat_src_indices=True)
                 phase.connect(name,
-                              [f'rhs_disc.{t}' for t in targets],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in targets],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
         for name, targets in [('t_initial', options['t_initial_targets']),
@@ -131,7 +131,7 @@ class GaussLobatto(PseudospectralBase):
             The phase object to which this transcription instance applies.
         """
         super(GaussLobatto, self).configure_controls(phase)
-        ode_inputs = get_promoted_vars(self._get_ode(phase), 'input')
+        ode_inputs = get_promoted_vars(phase.schur_coupling.rhs_disc, 'input')
 
         grid_data = self.grid_data
 
@@ -152,31 +152,31 @@ class GaussLobatto(PseudospectralBase):
 
             if options['targets']:
                 phase.connect(f'control_values:{name}',
-                              [f'rhs_disc.{t}' for t in options['targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
                 phase.connect(f'control_values:{name}',
-                              [f'rhs_col.{t}' for t in options['targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
             # Rate targets
             if options['rate_targets']:
                 phase.connect(f'control_rates:{name}_rate',
-                              [f'rhs_disc.{t}' for t in options['rate_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['rate_targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
                 phase.connect(f'control_rates:{name}_rate',
-                              [f'rhs_col.{t}' for t in options['rate_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['rate_targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
             # Second time derivative targets must be specified explicitly
             if options['rate2_targets']:
                 phase.connect(f'control_rates:{name}_rate2',
-                              [f'rhs_disc.{t}' for t in options['rate2_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['rate2_targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
                 phase.connect(f'control_rates:{name}_rate2',
-                              [f'rhs_col.{t}' for t in options['rate2_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['rate2_targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
     def configure_polynomial_controls(self, phase):
@@ -189,7 +189,7 @@ class GaussLobatto(PseudospectralBase):
             The phase object to which this transcription instance applies.
         """
         super(GaussLobatto, self).configure_polynomial_controls(phase)
-        ode_inputs = get_promoted_vars(self._get_ode(phase), 'input')
+        ode_inputs = get_promoted_vars(phase.schur_coupling.rhs_disc, 'input')
         grid_data = self.grid_data
 
         for name, options in phase.polynomial_control_options.items():
@@ -209,28 +209,28 @@ class GaussLobatto(PseudospectralBase):
 
             if options['targets']:
                 phase.connect(f'polynomial_control_values:{name}',
-                              [f'rhs_disc.{t}' for t in options['targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
                 phase.connect(f'polynomial_control_values:{name}',
-                              [f'rhs_col.{t}' for t in options['targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
             if options['rate_targets']:
                 phase.connect(f'polynomial_control_rates:{name}_rate',
-                              [f'rhs_disc.{t}' for t in options['rate_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['rate_targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
                 phase.connect(f'polynomial_control_rates:{name}_rate',
-                              [f'rhs_col.{t}' for t in options['rate_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['rate_targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
             if options['rate2_targets']:
                 phase.connect(f'polynomial_control_rates:{name}_rate2',
-                              [f'rhs_disc.{t}' for t in options['rate2_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{t}' for t in options['rate2_targets']],
                               src_indices=disc_src_idxs, flat_src_indices=True)
 
                 phase.connect(f'polynomial_control_rates:{name}_rate2',
-                              [f'rhs_col.{t}' for t in options['rate2_targets']],
+                              [f'SchurGroup.SchurCoupling.rhs_col.{t}' for t in options['rate2_targets']],
                               src_indices=col_src_idxs, flat_src_indices=True)
 
     def setup_ode(self, phase):
@@ -249,11 +249,13 @@ class GaussLobatto(PseudospectralBase):
         rhs_disc = ode_class(num_nodes=grid_data.subset_num_nodes['state_disc'], **kwargs)
         rhs_col = ode_class(num_nodes=grid_data.subset_num_nodes['col'], **kwargs)
 
-        phase.add_subsystem('rhs_disc', rhs_disc)
-
         super(GaussLobatto, self).setup_ode(phase)
 
-        phase.add_subsystem('rhs_col', rhs_col)
+        phase.schur_coupling.add_subsystem('rhs_disc', rhs_disc)
+
+        # super(GaussLobatto, self).setup_ode(phase)
+
+        phase.schur_coupling.add_subsystem('rhs_col', rhs_col)
 
         # Setup the interleave comp to interleave all states, any path constraints from the ODE,
         # and any timeseries outputs from the ODE.
@@ -271,7 +273,8 @@ class GaussLobatto(PseudospectralBase):
         """
         super(GaussLobatto, self).configure_ode(phase)
 
-        ode_inputs = get_promoted_vars(self._get_ode(phase), 'input')
+        ode_inputs = get_promoted_vars(phase.schur_coupling.rhs_disc, 'input')
+        
         map_input_indices_to_disc = self.grid_data.input_maps['state_input_to_disc']
 
         for name, options in phase.state_options.items():
@@ -280,10 +283,10 @@ class GaussLobatto(PseudospectralBase):
 
             if targets:
                 phase.connect(f'states:{name}',
-                              [f'rhs_disc.{tgt}' for tgt in targets],
+                              [f'SchurGroup.SchurCoupling.rhs_disc.{tgt}' for tgt in targets],
                               src_indices=src_idxs)
                 phase.connect(f'state_interp.state_col:{name}',
-                              [f'rhs_col.{tgt}' for tgt in targets])
+                              [f'SchurGroup.SchurCoupling.rhs_col.{tgt}' for tgt in targets])
 
             rate_path, disc_src_idxs = self._get_rate_source_path(name, nodes='state_disc',
                                                                   phase=phase)
@@ -364,14 +367,14 @@ class GaussLobatto(PseudospectralBase):
 
                     # Add the state values to the interleave comp
                     src_added = interleave_comp.add_var(ts_output_name, shape, units,
-                                                        disc_src=f'rhs_disc.{ts_output_name}',
-                                                        col_src=f'rhs_col.{ts_output_name}')
+                                                        disc_src=f'SchurGroup.SchurCoupling.rhs_disc.{ts_output_name}',
+                                                        col_src=f'SchurGroup.SchurCoupling.rhs_col.{ts_output_name}')
 
                     if src_added:
-                        phase.connect(f'rhs_disc.{ts_output["name"]}',
+                        phase.connect(f'SchurGroup.SchurCoupling.rhs_disc.{ts_output["name"]}',
                                       f'interleave_comp.disc_values:{ts_output_name}')
 
-                        phase.connect(f'rhs_col.{ts_output["name"]}',
+                        phase.connect(f'SchurGroup.SchurCoupling.rhs_col.{ts_output["name"]}',
                                       f'interleave_comp.col_values:{ts_output_name}')
 
     def setup_defects(self, phase):
@@ -496,10 +499,10 @@ class GaussLobatto(PseudospectralBase):
         else:
             # Failed to find variable, assume it is in the RHS
             if nodes == 'col':
-                rate_path = f'rhs_col.{var}'
+                rate_path = f'SchurGroup.SchurCoupling.rhs_col.{var}'
                 node_idxs = np.arange(gd.subset_num_nodes[nodes], dtype=int)
             elif nodes == 'state_disc':
-                rate_path = f'rhs_disc.{var}'
+                rate_path = f'SchurGroup.SchurCoupling.rhs_disc.{var}'
                 node_idxs = np.arange(gd.subset_num_nodes[nodes], dtype=int)
             else:
                 raise ValueError(f'Unabled to find rate path for variable {var} at '
@@ -652,8 +655,8 @@ class GaussLobatto(PseudospectralBase):
                 disc_src_idxs = (disc_src_idxs,)
                 col_src_idxs = (col_src_idxs,)
 
-                connection_info.append((f'rhs_disc.{tgt}', disc_src_idxs))
-                connection_info.append((f'rhs_col.{tgt}', col_src_idxs))
+                connection_info.append((f'SchurGroup.SchurCoupling.rhs_disc.{tgt}', disc_src_idxs))
+                connection_info.append((f'SchurGroup.SchurCoupling.rhs_col.{tgt}', col_src_idxs))
 
         return connection_info
 
